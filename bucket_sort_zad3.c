@@ -237,6 +237,14 @@ int main(int argc, char *argv[])
     config.buckets_amount = atoi(argv[5]);
     config.main_array = calloc(config.problem_size, sizeof(uint32_t));
 
+    char benchmark_buff[200];
+    char distribution_buff[200];
+    char sort_buff[200];
+    char rewrite_buff[200];
+    char wholealg_buff[200];
+    char buckets_buff[200];
+
+
     omp_set_num_threads(config.thread_num);
 
     double main_start_time = omp_get_wtime();
@@ -247,7 +255,7 @@ int main(int argc, char *argv[])
     benchmark(&config);
 
     double end_time = omp_get_wtime();
-    printf("benchmark,%s,%d,%d,%d,%.6f,%d\n", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
+    sprintf(benchmark_buff, "benchmark,%s,%d,%d,%d,%.6f,%d", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
 
     find_min_max(config.main_array, config.problem_size, &config.min_value, &config.max_value);
 
@@ -261,7 +269,7 @@ int main(int argc, char *argv[])
     merge_private_buckets(&config);
     end_time = omp_get_wtime();
 
-    printf("distribution_merge,%s,%d,%d,%d,%.6f,%d\n", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
+    sprintf(distribution_buff, "distribution_merge,%s,%d,%d,%d,%.6f,%d", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
 
     // sort buckets
     start_time = omp_get_wtime();
@@ -270,7 +278,7 @@ int main(int argc, char *argv[])
         qsort(config.global_buckets[b], config.global_bucket_lengths[b], sizeof(uint32_t), compare);
     }
     end_time = omp_get_wtime();
-    printf("sort,%s,%d,%d,%d,%.6f,%d\n", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
+    sprintf(sort_buff, "sort,%s,%d,%d,%d,%.6f,%d", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
 
     // rewrite to final array
     start_time = omp_get_wtime();
@@ -289,11 +297,22 @@ int main(int argc, char *argv[])
     }
 
     end_time = omp_get_wtime();
-    printf("rewrite,%s,%d,%d,%d,%.6f,%d\n", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
 
     double main_end_time = omp_get_wtime();
  
-    printf("whole_algorithm,%s,%d,%d,%d,%.6f,%d\n", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, main_end_time - main_start_time, config.buckets_amount);
+    sprintf(rewrite_buff, "rewrite,%s,%d,%d,%d,%.6f,%d", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, end_time - start_time, config.buckets_amount);
+    sprintf(wholealg_buff, "whole_algorithm,%s,%d,%d,%d,%.6f,%d", config.schedule_type, config.chunk_size, config.problem_size, config.thread_num, main_end_time - main_start_time, config.buckets_amount);
+
+    printf("{\n");
+    printf("\"csv_vals\": [\"%s\",\"%s\",\"%s\",\"%s\",\"%s\"],\n", benchmark_buff, distribution_buff, sort_buff, rewrite_buff, wholealg_buff);
+    printf("\"buckets\": [");
+    for (int i = 0; i < config.buckets_amount; i++) {
+        if (i == config.buckets_amount-1) printf("%u", config.global_bucket_lengths[i]);
+        else printf("%u,", config.global_bucket_lengths[i]);
+    }
+    printf("]\n");
+    printf("}");
+
 
     // check if array is sorted
     if (!is_sorted(config.main_array, config.problem_size)) {

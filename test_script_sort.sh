@@ -18,8 +18,14 @@ echo '{ "buckets": [' > "$buckets_json_file"  # Start JSON array
 # Parameters
 schedules=("static")
 chunk_sizes=(2)
-thread_numbers=(1 2 3 4 5 6 7 8)
-problem_sizes=(1e7 2e7 3e7)
+
+# Thread range=
+thread_start=1
+thread_end=48
+thread_step=1
+thread_numbers=($(eval echo {$thread_start..$thread_end..$thread_step}))
+
+problem_sizes=(1e7 2e7 3e7 4e7 5e7 6e7 7e7 8e7 9e7 10e7)
 bucket_amounts=(1000)
 
 # Path to compiled program
